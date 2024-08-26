@@ -1,5 +1,5 @@
+use futures_util::{StreamExt, SinkExt};
 use tokio_tungstenite::{connect_async, tungstenite::protocol::Message};
-use futures_util::StreamExt;
 use serde_json::Value;
 use std::sync::mpsc::Sender;
 use crate::order_book::OrderBook; // Import the OrderBook struct

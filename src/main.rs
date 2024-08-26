@@ -3,7 +3,9 @@ mod consolidator;
 mod order_book;  // Import the order_book module
 
 use std::env;
-use std::sync::mpsc as std_mpsc;
+
+use std::sync::mpsc::{self, Sender, Receiver};
+use crate::order_book::OrderBook;
 
 #[tokio::main]
 async fn main() {
@@ -17,16 +19,9 @@ async fn main() {
     let symbol = args[1].clone();
     let exchange = args[2].to_lowercase();
 
-    let (tx, rx) = std_mpsc::channel();
+    let (tx, rx): (Sender<(String, OrderBook)>, Receiver<(String, OrderBook)>) = mpsc::channel();
 
     match exchange.as_str() {
-        "binance" => {
-            let tx_binance = tx.clone();
-            let symbol_binance = symbol.clone();
-            tokio::spawn(async move {
-                exchanges::binance::subscribe_binance_order_book(&symbol_binance, tx_binance).await;
-            });
-        }
         "kraken" => {
             let tx_kraken = tx.clone();
             let symbol_kraken = symbol.clone();
