@@ -62,12 +62,12 @@ async def main():
     await asyncio.gather(
         #connect_to_exchange(binance_ws_url, {}),
         #connect_to_exchange(coinbase_ws_url, coinbase_subscription_message),
-        #connect_to_exchange(kraken_ws_url, kraken_subscription_message)
+        connect_to_exchange(kraken_ws_url, kraken_subscription_message)
         #connect_to_exchange(bitfinex_ws_url, bitfinex_subscription_message)
         #connect_to_exchange(okx_ws_url, okx_subscription_message)
         #connect_to_exchange(huobi_ws_url, huobi_subscription_message)
         #connect_to_exchange(bybit_ws_url, bybit_subscription_message)
-        connect_to_exchange(gateio_ws_url, gateio_subscription_message)
+        #connect_to_exchange(gateio_ws_url, gateio_subscription_message)
     )
 
 asyncio.run(main())

@@ -1,8 +1,8 @@
-use futures_util::{StreamExt, SinkExt};
 use tokio_tungstenite::{connect_async, tungstenite::protocol::Message};
+use futures_util::{StreamExt, SinkExt};
 use serde_json::Value;
 use std::sync::mpsc::Sender;
-use crate::order_book::OrderBook; // Import the OrderBook struct
+use crate::order_book::OrderBook;
 
 pub async fn subscribe_kraken_order_book(symbol: &str, tx: Sender<(String, OrderBook)>) {
     let kraken_symbol = format!("{}{}", symbol[..3].to_uppercase(), symbol[3..].to_uppercase());
@@ -32,6 +32,26 @@ pub async fn subscribe_kraken_order_book(symbol: &str, tx: Sender<(String, Order
                 if let Some(arr) = data.as_array() {
                     if arr.len() > 1 {
                         if let Some(book_data) = arr.get(1) {
+                            // Handle snapshot ("bs" and "as")
+                            if let Some(bids_snapshot) = book_data.get("bs") {
+                                if let Some(asks_snapshot) = book_data.get("as") {
+                                    for bid in bids_snapshot.as_array().unwrap() {
+                                        let price = bid[0].as_str().unwrap().parse::<f64>().unwrap();
+                                        let quantity = bid[1].as_str().unwrap().parse::<f64>().unwrap();
+                                        order_book.update("bids", price, quantity);
+                                    }
+                                    for ask in asks_snapshot.as_array().unwrap() {
+                                        let price = ask[0].as_str().unwrap().parse::<f64>().unwrap();
+                                        let quantity = ask[1].as_str().unwrap().parse::<f64>().unwrap();
+                                        order_book.update("asks", price, quantity);
+                                    }
+                                    // Send the snapshot
+                                    tx.send((symbol.to_string(), order_book.clone()))
+                                        .expect("Failed to send snapshot order book");
+                                }
+                            }
+
+                            // Handle incremental updates ("b" and "a")
                             if let Some(bids) = book_data.get("b") {
                                 for bid in bids.as_array().unwrap() {
                                     let price = bid[0].as_str().unwrap().parse::<f64>().unwrap();
@@ -47,7 +67,7 @@ pub async fn subscribe_kraken_order_book(symbol: &str, tx: Sender<(String, Order
                                 }
                             }
 
-                            // Send the updated order book back through the channel
+                            // Send the updated order book after incremental updates
                             tx.send((symbol.to_string(), order_book.clone()))
                                 .expect("Failed to send updated order book");
                         }
